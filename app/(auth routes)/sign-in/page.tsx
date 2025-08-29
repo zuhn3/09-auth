@@ -1,63 +1,69 @@
-'use client'
-import css from './sign-in.module.css'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { LoginRequest } from '@/lib/api/api'
-import { login } from '@/lib/api/clientApi'
-import { ApiError } from 'next/dist/server/api-utils'
-import { useUserData } from "@/lib/store/authStore";
-const SignIn = () =>{
-    const router = useRouter()
-    const [error, setError] = useState('')
-    const {setData} = useUserData()
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { login, LoginRequest } from "@/lib/api/clientApi";
+import css from "./SignInPage.module.css";
+import { ApiError } from "@/app/api/api";
+import { useAuthStore } from "@/lib/store/authStore";
 
-    const handleLogin = async (formData: FormData) =>{
-        try{
-            const data = Object.fromEntries(formData) as LoginRequest
-            const response = await login(data);
-
-            if(response){
-                setData({username: response.email, email: response.email, avatar: response.avatar})
-                router.push(`/profile`)
-            }
-            else{
-                setError('You are not authorized')
-            }
-        }catch (error){
-            setError((error as ApiError).message)
-        }
+export default function SignIn() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const setUser = useAuthStore((state) => state.setUser);
+  const handleSubmit = async (formData: FormData) => {
+    try {
+      const formValues = Object.fromEntries(formData) as LoginRequest;
+      const res = await login(formValues);
+      console.log("res", res);
+      if (res) {
+        setUser(res);
+        router.push("/profile");
+      } else {
+        setError("Invalid email or password");
+      }
+    } catch (error) {
+      setError(
+        (error as ApiError).response?.data?.error ??
+          (error as ApiError).message ??
+          "Oops... some error"
+      );
     }
+  };
+  return (
+    <main className={css.mainContent}>
+      <form action={handleSubmit} className={css.form}>
+        <h1 className={css.formTitle}>Sign in</h1>
 
+        <div className={css.formGroup}>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            className={css.input}
+            required
+          />
+        </div>
 
+        <div className={css.formGroup}>
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            className={css.input}
+            required
+          />
+        </div>
 
+        <div className={css.actions}>
+          <button type="submit" className={css.submitButton}>
+            Log in
+          </button>
+        </div>
 
-    return (
-        <main className={css.mainContent}>
-            <form className={css.form} action={handleLogin}>
-                <h1 className={css.formTitle}>Sign in</h1>
-
-                <div className={css.formGroup}>
-                    <label htmlFor="email">Email</label>
-                    <input id="email" type="email" name="email" className={css.input} required />
-                </div>
-
-                <div className={css.formGroup}>
-                    <label htmlFor="password">Password</label>
-                    <input id="password" type="password" name="password" className={css.input} required />
-                </div>
-
-                <div className={css.actions}>
-                    <button type="submit" className={css.submitButton}>
-                        Log in
-                    </button>
-                </div>
-
-                <p className={css.error}>{error}</p>
-            </form>
-        </main>
-
-    )
+        <p className={css.error}>{error}</p>
+      </form>
+    </main>
+  );
 }
-
-
-export default SignIn;
