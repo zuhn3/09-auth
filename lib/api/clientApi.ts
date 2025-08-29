@@ -23,7 +23,7 @@ type CheckSessionRequest = {
 };
 
 export const checkSession = async () => {
-  const response = await nextServer.get<CheckSessionRequest>("/auth/session");
+  const response = await nextServer.get<CheckSessionRequest>("/api/auth/session");
   return response.data.success;
 };
 
